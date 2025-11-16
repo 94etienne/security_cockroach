@@ -274,7 +274,7 @@ def play_alert_sound():
 # ---------------------------------------------------------
 # SEND EMAIL ALERT
 # ---------------------------------------------------------
-def send_heat_alert_email():
+def send_heat_alert_email(t):
     global last_email_time
     now = time.time()
 
@@ -284,16 +284,116 @@ def send_heat_alert_email():
     last_email_time = now
 
     subject = "🔥 ALERT: Heat Signature Detected!"
-    body = (
-        f"A heat signature was detected by the autonomous agent.\n"
-        f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-    )
+    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    ambient = t['ambient_temp_c']
+    surface = t['surface_temp_c']
+    infrared = t['infrared_temp_c']
+
+    body = f"""
+    <div style="
+        max-width: 520px;
+        margin: auto;
+        background: #ffffff;
+        border-radius: 14px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+        padding: 24px;
+        font-family: Arial, sans-serif;
+    ">
+
+        <!-- Header -->
+        <div style="text-align: center; margin-bottom: 20px;">
+            <div style="
+                font-size: 28px;
+                font-weight: bold;
+                color: #d9534f;
+            ">
+                🔥 ALERT: Heat Signature Detected!
+            </div>
+            <div style="font-size: 14px; color: #777;">
+                {current_time}
+            </div>
+        </div>
+
+        <!-- Description -->
+        <p style="font-size: 15px; color: #333; line-height: 1.6; text-align:center;">
+            A heat signature was detected by the autonomous agent.
+        </p>
+
+        <!-- Sensor Readings Card -->
+        <div style="
+            background: #fff5f5;
+            border-left: 5px solid #ff4d4d;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 16px;
+        ">
+            <div style="font-weight: bold; font-size: 16px; margin-bottom: 10px;">
+                🌡️ Sensor Readings at Detection
+            </div>
+
+            <!-- Responsive Grid -->
+            <div style="
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+            ">
+                <div style="
+                    flex: 1;
+                    min-width: 140px;
+                    background: #ffffff;
+                    padding: 12px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                    text-align: center;
+                ">
+                    <div style="font-size: 13px; color:#555;">Ambient Temperature</div>
+                    <div style="font-size: 20px; font-weight: bold; color:#d9534f;">
+                        {ambient:.1f}°C
+                    </div>
+                </div>
+
+                <div style="
+                    flex: 1;
+                    min-width: 140px;
+                    background: #ffffff;
+                    padding: 12px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                    text-align: center;
+                ">
+                    <div style="font-size: 13px; color:#555;">Surface Temperature</div>
+                    <div style="font-size: 20px; font-weight: bold; color:#d9534f;">
+                        {surface:.1f}°C
+                    </div>
+                </div>
+
+                <div style="
+                    flex: 1;
+                    min-width: 140px;
+                    background: #ffffff;
+                    padding: 12px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                    text-align: center;
+                ">
+                    <div style="font-size: 13px; color:#555;">Infrared Temperature</div>
+                    <div style="font-size: 20px; font-weight: bold; color:#d9534f;">
+                        {infrared:.1f}°C
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    """
+
 
     msg = MIMEMultipart()
     msg["From"] = EMAIL_ADDRESS
     msg["To"] = TO_EMAIL
     msg["Subject"] = subject
-    msg.attach(MIMEText(body, "plain"))
+    msg.attach(MIMEText(body, "html"))
 
     try:
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
@@ -302,7 +402,6 @@ def send_heat_alert_email():
         print("📧 Email sent")
     except Exception as e:
         print("❌ Email failed:", e)
-
 
 # ---------------------------------------------------------
 # SYNTHETIC SENSOR GENERATORS
@@ -350,7 +449,7 @@ while True:
             alert_msg = f"🔥 HEAT DETECTED at {datetime.now().strftime('%H:%M:%S')}"
             st.session_state.last_alert = alert_msg
             play_alert_sound()
-            send_heat_alert_email()
+            send_heat_alert_email(t)
         st.session_state.last_heat_state = 1
         status_class = "status-alert"
     else:
